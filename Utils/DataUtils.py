@@ -206,14 +206,14 @@ def get_onehot_encoded(df, colname, drop_original=True):
     :param drop_original: if True, drops original column
     :return: updated dataframe 
     """
-    
     # Sanity check
     if colname not in df.columns:
         raise ValueError("Column not in Dataframe!")
         return data
     
     ohe = OneHotEncoder(categorical_features=[0])
-    out = ohe.fit_transform(df[colname].values.reshape(-1,1)).toarray()
+    vec = np.asarray(df[colname].values).reshape(-1,1)
+    out = ohe.fit_transform(vec).toarray()
     # Drop the first column - dummy variable trap
     out = out[:,1:]
     # Join with the original data frame

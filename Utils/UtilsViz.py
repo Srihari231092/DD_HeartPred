@@ -8,8 +8,6 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
-import textwrap
-
 
 from matplotlib.ticker import PercentFormatter
 
@@ -36,7 +34,7 @@ def plot_naive_variance(pca, ax):
     ax.set_xlabel("Dimension #")
     ax.set_ylabel("Explained Variance Ratio")
     
-
+    
 def plot_pca_var_cum(pca, ax, cutoff=0.95):
     '''
     Plots the cumulative variance explained by each of the principal components.
@@ -50,11 +48,11 @@ def plot_pca_var_cum(pca, ax, cutoff=0.95):
     A matplotlib.Axes instance.
     '''
     cum_var = np.cumsum(pca.explained_variance_ratio_)
-    sns.lineplot(x=range(len(cum_var)),  y=cum_var, c='lightblue', ax=ax)
-    plt.axhline(cutoff, 1, 0, color='k').set_linestyle("--")
+    sns.lineplot(x=range(len(cum_var)),  y=cum_var, ax=ax)
+    plt.axhline(cutoff, 1, 0, c="orange", linestyle="--")
     tmp = list(abs(cum_var-cutoff))
     cx = tmp.index(min(tmp))+1
-    plt.axvline(cx, cutoff, 0, color='k').set_linestyle("--")
+    plt.axvline(cx, cutoff, 0, c="orange", linestyle="--")
     ax.set_title("Cumulative Explained Variance")
     ax.set_xlabel("Dimension #")
     ax.set_ylabel("Cumulative Explained Variance Ratio")
@@ -81,14 +79,12 @@ def print_df_cols(df):
     print()
 
 
-def plot_corr_heatmap(corrmat, annotate=False, annot_size=15):
+def plot_corr_heatmap(corrmat, ax, annotate=False, annot_size=15):
     # plt.imshow(xcorr, cmap='hot')
     # Generate a mask for the upper triangle
     mask = np.zeros_like(corrmat, dtype=np.bool)
     mask[np.triu_indices_from(mask)] = True
     cutsomcmap = sns.diverging_palette(250, 0, as_cmap=True)
-    a4_dims = (11.7, 8.27)
-    fig, ax = plt.subplots(figsize=a4_dims)
     corrheatmap = \
         sns.heatmap(ax=ax, data=corrmat, mask=mask, annot=annotate,
                     linewidths=0.5, cmap=cutsomcmap, annot_kws={"size": annot_size})
@@ -131,20 +127,12 @@ def plot_bar_timegraph(x, y, data, ax, highlight_max_min=False,
     ax.legend(handles=ax.lines[::len(data) + 1], labels=[y, y + " % change"])
 
 
-def plot_box(x, y, data, agg_rule, ax, point_plot=True, annot=False,
-                       title="", xlabel="", ylabel="", ylim=None):
+def plot_box_timegraph(x, y, data, agg_rule, ax, point_plot=True, annot=False,
+                       title="", xlabel="", ylabel=""):
     # Get the median value at each year
     agg_data = data[[y, x]].groupby(by=[x], as_index=False).agg(agg_rule)
     g = sns.boxplot(x=x, y=y, data=data[[y, x]], ax=ax)
     if point_plot:
-        
-        if "object" in str(agg_data[x].dtype):
-            xtl = list(g.get_xticklabels())
-            sorter = [textwrap.fill(t.get_text(), 10)  for t in xtl]
-
-            sorterIndex = dict(zip(sorter,range(len(sorter))))
-            agg_data[x] = agg_data[x].map(sorterIndex)
-
         g = sns.pointplot(x=x, y=y, data=agg_data, ax=ax, color="k")
     if annot:
         # Add labels to the plot
@@ -155,48 +143,15 @@ def plot_box(x, y, data, agg_rule, ax, point_plot=True, annot=False,
             ax.text(idx, ry, str(s1[idx]), **style, va="bottom", ha='center')
 
     g.set(xlabel=xlabel, ylabel=ylabel, title=title)
-    if ylim is not None:
-        ax.set_ylim([0, ylim])
-    else:
-        ax.set_ylim([0, data[y].max() * 1.2])
+    ax.set_ylim([0, data[y].max() * 1.2])
     ax.legend(handles=ax.lines[::len(data)], labels=[y + " " + agg_rule])
+
     
 def plot_violin(x, y, data, agg_rule, ax, point_plot=True, annot=False,
-                       title="", xlabel="", ylabel="", ylim=None):
+                       title="", xlabel="", ylabel="", **kwargs):
     # Get the median value at each year
     agg_data = data[[y, x]].groupby(by=[x], as_index=False).agg(agg_rule)
-    g = sns.violinplot(x=x, y=y, data=data[[y, x]], ax=ax, inner="quartile")
-    if point_plot:
-        
-        if "object" in str(agg_data[x].dtype):
-            xtl = list(g.get_xticklabels())
-            sorter = [textwrap.fill(t.get_text(), 10)  for t in xtl]
-
-            sorterIndex = dict(zip(sorter,range(len(sorter))))
-            agg_data[x] = agg_data[x].map(sorterIndex)
-
-        g = sns.pointplot(x=x, y=y, data=agg_data, ax=ax, color="k", style="--")
-    if annot:
-        # Add labels to the plot
-        style = dict(size=12, color='darkblue')
-        s1 = np.round(agg_data[y].values, 2)
-        for idx, row in agg_data.iterrows():
-            rx, ry = row[x], row[y]
-            ax.text(idx, ry, str(s1[idx]), **style, va="bottom", ha='center')
-
-    g.set(xlabel=xlabel, ylabel=ylabel, title=title)
-    if ylim is not None:
-        ax.set_ylim([0, ylim])
-    else:
-        ax.set_ylim([0, data[y].max() * 1.2])
-    ax.legend(handles=ax.lines[::len(data)], labels=[y + " " + agg_rule])
-    
-    
-def plot_box_timegraph(x, y, data, agg_rule, ax, point_plot=True, annot=False,
-                       title="", xlabel="", ylabel="", ylim=None):
-    # Get the median value at each year
-    agg_data = data[[y, x]].groupby(by=[x], as_index=False).agg(agg_rule)
-    g = sns.boxplot(x=x, y=y, data=data[[y, x]], ax=ax)
+    g = sns.violinplot(x=x, y=y, data=data, ax=ax, **kwargs)
     if point_plot:
         g = sns.pointplot(x=x, y=y, data=agg_data, ax=ax, color="k")
     if annot:
@@ -208,11 +163,9 @@ def plot_box_timegraph(x, y, data, agg_rule, ax, point_plot=True, annot=False,
             ax.text(idx, ry, str(s1[idx]), **style, va="bottom", ha='center')
 
     g.set(xlabel=xlabel, ylabel=ylabel, title=title)
-    if ylim is not None:
-        ax.set_ylim([0, ylim])
-    else:
-        ax.set_ylim([0, data[y].max() * 1.2])
+    ax.set_ylim([0, data[y].max() * 1.2])
     ax.legend(handles=ax.lines[::len(data)], labels=[y + " " + agg_rule])
+    return g
 
 
 def plot_bubblehist(x, y, s, data, show_max_min=True, title="", xlabel="", ylabel="", ax=None):
@@ -262,26 +215,24 @@ def plot_bubblehist(x, y, s, data, show_max_min=True, title="", xlabel="", ylabe
 
 
     
-def plot_dist(data, colname, xlabel="", ylabel="", title="", kde=True, hist=True, legend=True, figsize=(10,10)):
-    f, (ax_box, ax_hist) = plt.subplots(2, figsize=figsize, sharex=False, gridspec_kw={"height_ratios": (.15, .85)})
+def plot_dist(data, colname, xlabel="", ylabel="", title="", legend=True):
+    f, (ax_box, ax_hist) = plt.subplots(2, sharex=True, gridspec_kw={"height_ratios": (.15, .85)})
  
     # Add a graph in each part
     gbox = sns.boxplot(data[colname], ax=ax_box)
-    ghist = sns.distplot(data[colname], ax=ax_hist, kde=kde, hist=hist)
+    ghist = sns.distplot(data[colname], ax=ax_hist)
 
     # Remove x axis name for the boxplot
     ax_box.set(xlabel='')
 
-    ghist.set(xlabel=xlabel, ylabel=ylabel)
-    gbox.set(title=title)
+    ghist.set(xlabel=xlabel, ylabel=ylabel, title=title)
     if legend:
         ax_hist.legend(handles=ax_hist.lines[::len(data) + 1], labels=[colname])
 
     
 
-def plot_bar(data, x, y, ax, hue=None, title="", xlabel="", ylabel="",
+def plot_bar(data, x, y, ax, title="", xlabel="", ylabel="",
              xrot=0, yrot=0, highlight_max_min=True,
-             plot_percentiles=[], plot_mean=True,
              point_plot=False, annot=True, legend=False):    
     if highlight_max_min:
         clrs = []
@@ -295,17 +246,7 @@ def plot_bar(data, x, y, ax, hue=None, title="", xlabel="", ylabel="",
                 clrs.append('lightgreen')
         g = sns.barplot(x=x, y=y, data=data, ax=ax, palette=clrs)
     else:
-        g = sns.barplot(x=x, y=y, data=data, ax=ax, hue=hue)
-        
-    if len(plot_percentiles) > 0:
-        for p in plot_percentiles:
-            v = np.percentile(data[y].values, p)
-            plt.axhline(v, 1, 0, color='grey').set_linestyle("--")
-            
-    if plot_mean:
-        v = data[y].mean()
-        plt.axhline(v, 1, 0, color='k').set_linestyle("--")
-        
+        g = sns.barplot(x=x, y=y, data=data, ax=ax)
     if point_plot:
         g1 = sns.pointplot(x=x, y=y, data=data, ax=ax, color="darkblue")
     if xrot != 0:
